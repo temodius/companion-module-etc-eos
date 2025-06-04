@@ -611,14 +611,27 @@ class ModuleInstance extends InstanceBase {
 		//
 		// If the CUE value is " 0.0" then reset active cue list/number
 		const cuematch =
-			/^(?<CUE_NUMBER>[\d\.]+\/[\d\.]+|[\d\.]+)?(?<CUEWLIST>\/[\d\.]+)?( (?<LABEL>.*?))? (?<DURATION>[\d\.]+)( (?<INTENSITY>[\d\.]+%))?$/
+			/^(?<CUE_NUMBER>[\d\.]+\/[\d\.]+|[\d\.]+)?(?<CUEWLIST>\/[\d\.]+)?( (?<LABEL>.*?))? (?<DURATION>[\d\.:]+)( (?<INTENSITY>[\d\.]+%))?$/
 		let matches = cueName.match(cuematch)
 
 		if (matches !== null && matches.length >= 6) {
 			// Parse the response.
+			let duration = matches[5]
+			if (typeof duration === 'string' && duration.includes(':')) {
+				const parts = duration.split(':').map(Number)
+				if (parts.length === 2) {
+					// mm:ss
+					const [min, sec] = parts
+					duration = (min * 60 + sec).toString()
+				} else if (parts.length === 3) {
+					// hh:mm:ss
+					const [hour, min, sec] = parts
+					duration = (hour * 3600 + min * 60 + sec).toString()
+				}
+			}
 			const newValues = {
 				[`cue_${type}_label`]: matches[3] || matches[2], // Use cue number if label not available.
-				[`cue_${type}_duration`]: matches[5],
+				[`cue_${type}_duration`]: duration,
 			}
 
 			if (matches.length === 8) {
